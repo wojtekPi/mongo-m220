@@ -4,15 +4,21 @@ import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.ReadPreference;
 import com.mongodb.client.*;
+import java.io.IOException;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.springframework.core.env.Environment;
 
 /**
  * @see com.mongodb.client.MongoClients
@@ -23,20 +29,23 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest
 public class MongoClientLesson extends AbstractLesson {
 
-  private MongoClient mongoClient;
+    private MongoClient mongoClient;
 
-  private MongoDatabase database;
+    private MongoDatabase database;
 
-  private MongoCollection<Document> collection;
+    private MongoCollection<Document> collection;
 
-  private String uri = "<YOUR SRV STRING from the application.properties file>";
+    private String uri = getProperty("spring.mongodb.uri");
 
-  private Document document;
+    private Document document;
 
-  private Bson bson;
+    private Bson bson;
 
-  @Test
-  public void MongoClientInstance() {
+    public MongoClientLesson() throws IOException {
+    }
+
+    @Test
+    public void MongoClientInstance() {
 
     /*
     Let's start by instantiating a MongoClient object, since this is the
@@ -54,11 +63,11 @@ public class MongoClientLesson extends AbstractLesson {
     mongodb uri.
      */
 
-    mongoClient = MongoClients.create(uri);
+        mongoClient = MongoClients.create(uri);
 
-    Assert.assertNotNull(mongoClient);
+        Assert.assertNotNull(mongoClient);
 
-    MongoClientSettings settings;
+        MongoClientSettings settings;
 
     /*
     The MongoClients object will create a MongoClient instance by
@@ -73,24 +82,24 @@ public class MongoClientLesson extends AbstractLesson {
 
      */
 
-    ConnectionString connectionString = new ConnectionString(uri);
-    MongoClientSettings clientSettings =
-        MongoClientSettings.builder()
-            .applyConnectionString(connectionString)
-            .applicationName("mflix")
-            .applyToConnectionPoolSettings(
-                builder -> builder.maxWaitTime(1000, TimeUnit.MILLISECONDS))
-            .build();
+        ConnectionString connectionString = new ConnectionString(uri);
+        MongoClientSettings clientSettings =
+            MongoClientSettings.builder()
+                .applyConnectionString(connectionString)
+                .applicationName("mflix")
+                .applyToConnectionPoolSettings(
+                    builder -> builder.maxWaitTime(1000, TimeUnit.MILLISECONDS))
+                .build();
 
-    mongoClient = MongoClients.create(clientSettings);
+        mongoClient = MongoClients.create(clientSettings);
 
-    Assert.assertNotNull(mongoClient);
-  }
+        Assert.assertNotNull(mongoClient);
+    }
 
-  @Test
-  public void MongoDatabaseInstance() {
+    @Test
+    public void MongoDatabaseInstance() {
 
-    mongoClient = MongoClients.create(uri);
+        mongoClient = MongoClients.create(uri);
 
     /*
     Now that we have a MongoClient instance, we can go ahead and connect
@@ -101,7 +110,7 @@ public class MongoClientLesson extends AbstractLesson {
 
      */
 
-    MongoIterable<String> databaseIterable = mongoClient.listDatabaseNames();
+        MongoIterable<String> databaseIterable = mongoClient.listDatabaseNames();
 
     /*
     This command returns a MongoIterable instance, an iterable object
@@ -109,11 +118,11 @@ public class MongoClientLesson extends AbstractLesson {
     We will be using MongoIterable instances quite often.
      */
 
-    List<String> dbnames = new ArrayList<>();
-    for (String name : databaseIterable) {
-      System.out.println(name);
-      dbnames.add(name);
-    }
+        List<String> dbnames = new ArrayList<>();
+        for (String name : databaseIterable) {
+            System.out.println(name);
+            dbnames.add(name);
+        }
 
     /*
     Important to note that Iterable instance get exhausted, like a cursor,
@@ -121,7 +130,7 @@ public class MongoClientLesson extends AbstractLesson {
     you need to go over the contents more than once.
      */
 
-    Assert.assertTrue(dbnames.contains("mflix"));
+        Assert.assertTrue(dbnames.contains("mflix"));
 
     /*
     Then we have our MongoDatabase object. We will use this object to
@@ -129,20 +138,20 @@ public class MongoClientLesson extends AbstractLesson {
     database level read preferences, read concerns and write concerns.
      */
 
-    database = mongoClient.getDatabase("mflix");
+        database = mongoClient.getDatabase("mflix");
 
-    ReadPreference readPreference = database.getReadPreference();
+        ReadPreference readPreference = database.getReadPreference();
 
     /*
     Here, because we did not specify a Read Preference, we driver will
     use the default configuration which is primary.
      */
 
-    Assert.assertEquals("primary", readPreference.getName());
-  }
+        Assert.assertEquals("primary", readPreference.getName());
+    }
 
-  @Test
-  public void MongoCollectionInstance() {
+    @Test
+    public void MongoCollectionInstance() {
 
     /*
     A MongoCollection instance is what is used to read and write to the
@@ -153,9 +162,9 @@ public class MongoClientLesson extends AbstractLesson {
     collection name from a MongoDatabase instance.
      */
 
-    mongoClient = MongoClients.create(uri);
-    database = mongoClient.getDatabase("mflix");
-    collection = database.getCollection("movies");
+        mongoClient = MongoClients.create(uri);
+        database = mongoClient.getDatabase("mflix");
+        collection = database.getCollection("movies");
 
     /*
     In this example we are using the basic form of interacting with
@@ -166,21 +175,21 @@ public class MongoClientLesson extends AbstractLesson {
     as return of queries. More about this on the POJO support lessons.
      */
 
-    MongoIterable<Document> cursor = collection.find().skip(10).limit(20);
+        MongoIterable<Document> cursor = collection.find().skip(10).limit(20);
 
     /*
     All of our Data Manipulation Language (DML) will be expressed via a
     MongoCollection instance;
      */
-    List<Document> documents = new ArrayList<>();
-    Assert.assertEquals(20, cursor.into(documents).size());
-  }
+        List<Document> documents = new ArrayList<>();
+        Assert.assertEquals(20, cursor.into(documents).size());
+    }
 
-  @Test
-  public void DocumentInstance() {
-    mongoClient = MongoClients.create(uri);
-    database = mongoClient.getDatabase("test");
-    collection = database.getCollection("users");
+    @Test
+    public void DocumentInstance() {
+        mongoClient = MongoClients.create(uri);
+        database = mongoClient.getDatabase("test");
+        collection = database.getCollection("users");
 
     /*
     The basic data structures in MongoDB are documents. The document
@@ -193,7 +202,7 @@ public class MongoClientLesson extends AbstractLesson {
     becomes imperative.
     */
 
-    document = new Document("name", new Document("first", "Norberto").append("last", "Leite"));
+        document = new Document("name", new Document("first", "Norberto").append("last", "Leite"));
 
     /*
     This document defines a MongoDB document that looks like this in its
@@ -208,7 +217,7 @@ public class MongoClientLesson extends AbstractLesson {
 
     */
 
-    collection.insertOne(document);
+        collection.insertOne(document);
 
     /*
     We use documents for everything in MongoDB.
@@ -223,7 +232,7 @@ public class MongoClientLesson extends AbstractLesson {
     are BSON data structures.
     */
 
-    Assert.assertTrue(document instanceof Bson);
+        Assert.assertTrue(document instanceof Bson);
 
     /*
     We will also use instances of Bson, throughout the course, to define
@@ -231,5 +240,5 @@ public class MongoClientLesson extends AbstractLesson {
     stages. More on that in the next lectures.
     */
 
-  }
+    }
 }
