@@ -96,7 +96,7 @@ public class Migrator {
         String mongoUri = "mongodb+srv://m220student:m220password@mflix-tl4cc.mongodb.net/sample_mflix?retryWrites=true&w=majority";
 
         // instantiate database and collection objects
-        MongoDatabase mflix = MongoClients.create(mongoUri).getDatabase("mflix");
+        MongoDatabase mflix = MongoClients.create(mongoUri).getDatabase("sample_mflix");
         MongoCollection<Document> movies = mflix.getCollection("movies");
         Bson dateStringFilter = null;
         String datePattern = "yyyy-MM-dd HH:mm:ss";
