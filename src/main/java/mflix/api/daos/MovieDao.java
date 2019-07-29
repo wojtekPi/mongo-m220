@@ -1,5 +1,11 @@
 package mflix.api.daos;
 
+import static com.mongodb.client.model.Aggregates.lookup;
+import static com.mongodb.client.model.Aggregates.match;
+import static com.mongodb.client.model.Aggregates.sort;
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Sorts.descending;
+
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Aggregates;
@@ -68,11 +74,16 @@ public class MovieDao extends AbstractMFlixDao {
         }
 
         List<Bson> pipeline = new ArrayList<>();
-        // match stage to find movie
-        Bson match = Aggregates.match(Filters.eq("_id", new ObjectId(movieId)));
+        ObjectId objectId = new ObjectId(movieId);
+        Bson match = Aggregates.match(Filters.eq("_id", objectId));
         pipeline.add(match);
+        List<Bson> innerPipeline;
+        innerPipeline = Arrays.asList(match(eq(
+            "movie_id",
+            objectId)), sort(descending("date")));
+        // match stage to find movie
+        pipeline.add(lookup("comments", innerPipeline, "comments"));
         // TODO> Ticket: Get Comments - implement the lookup stage that allows the comments to
-        // retrieved with Movies.
         Document movie = moviesCollection.aggregate(pipeline).first();
 
         return movie;
@@ -90,7 +101,7 @@ public class MovieDao extends AbstractMFlixDao {
     public List<Document> getMovies(int limit, int skip) {
         String defaultSortKey = "tomatoes.viewer.numReviews";
         List<Document> movies =
-            new ArrayList<>(getMovies(limit, skip, Sorts.descending(defaultSortKey)));
+            new ArrayList<>(getMovies(limit, skip, descending(defaultSortKey)));
         return movies;
     }
 
@@ -174,7 +185,7 @@ public class MovieDao extends AbstractMFlixDao {
      */
     public List<Document> getMoviesByCast(String sortKey, int limit, int skip, String... cast) {
         Bson castFilter = Filters.in("cast", cast);
-        Bson sort = Sorts.descending(sortKey);
+        Bson sort = descending(sortKey);
         //TODO> Ticket: Subfield Text Search - implement the expected cast
         // filter and sort
         List<Document> movies = new ArrayList<>();
@@ -201,7 +212,7 @@ public class MovieDao extends AbstractMFlixDao {
         // query filter
         Bson castFilter = Filters.in("genres", genres);
         // sort key
-        Bson sort = Sorts.descending(sortKey);
+        Bson sort = descending(sortKey);
         List<Document> movies = new ArrayList<>();
         // TODO > Ticket: Paging - implement the necessary cursor methods to support simple
         // pagination like skip and limit in the code below
@@ -280,8 +291,8 @@ public class MovieDao extends AbstractMFlixDao {
         List<Document> movies = new ArrayList<>();
         String sortKey = "tomatoes.viewer.numReviews";
         Bson skipStage = Aggregates.skip(skip);
-        Bson matchStage = Aggregates.match(Filters.in("cast", cast));
-        Bson sortStage = Aggregates.sort(Sorts.descending(sortKey));
+        Bson matchStage = match(Filters.in("cast", cast));
+        Bson sortStage = sort(descending(sortKey));
         Bson limitStage = Aggregates.limit(limit);
         Bson facetStage = buildFacetStage();
         // Using a LinkedList to ensure insertion order

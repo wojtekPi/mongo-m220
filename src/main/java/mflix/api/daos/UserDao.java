@@ -10,7 +10,9 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.util.Map;
 import mflix.api.models.Session;
 import mflix.api.models.User;
@@ -153,8 +155,12 @@ public class UserDao extends AbstractMFlixDao {
     public boolean updateUserPreferences(String email, Map<String, ?> userPreferences) {
         //TODO> Ticket: User Preferences - implement the method that allows for user preferences to
         // be updated.
+        if(userPreferences == null){
+            throw new IncorrectDaoOperation("Incorrect user pref.");
+        }
+        UpdateResult updateResult = usersCollection.updateOne(Filters.eq("email", email), Updates.set("preferences", userPreferences));
         //TODO > Ticket: Handling Errors - make this method more robust by
         // handling potential exceptions when updating an entry.
-        return false;
+        return updateResult.wasAcknowledged();
     }
 }
